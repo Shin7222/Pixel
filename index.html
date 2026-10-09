@@ -1,0 +1,669 @@
+<!doctype html>
+<html lang="id">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Papan Piksel - satu halaman, sejuta piksel</title>
+        <meta
+            name="description"
+            content="Pilih area di papan 1.000.000 piksel, pasang gambar dan tautanmu. Gratis."
+        />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap"
+            rel="stylesheet"
+        />
+        <style>
+            :root {
+                --bg: #e9eef2;
+                --ink: #14213d;
+                --muted: #55637a;
+                --line: #cdd7df;
+                --panel: #ffffff;
+                --red: #e4002b;
+                --ok: #0b7a4b;
+            }
+            @media (prefers-color-scheme: dark) {
+                :root:not([data-theme="light"]) {
+                    --bg: #0f1722;
+                    --ink: #e8eef5;
+                    --muted: #9fb0c4;
+                    --line: #26364a;
+                    --panel: #172233;
+                }
+            }
+            * {
+                box-sizing: border-box;
+            }
+            html {
+                background: var(--bg);
+            }
+            body {
+                margin: 0;
+                background: var(--bg);
+                color: var(--ink);
+                font-family:
+                    "Bricolage Grotesque",
+                    system-ui,
+                    -apple-system,
+                    "Segoe UI",
+                    sans-serif;
+                line-height: 1.5;
+                padding: env(safe-area-inset-top, 0) 0
+                    env(safe-area-inset-bottom, 0);
+            }
+            .wrap {
+                max-width: 1040px;
+                margin: 0 auto;
+                padding: 20px 16px 48px;
+            }
+            h1 {
+                font-size: clamp(2rem, 7vw, 3.6rem);
+                line-height: 1.02;
+                margin: 8px 0 10px;
+                font-weight: 800;
+                letter-spacing: -0.02em;
+            }
+            .lead {
+                max-width: 56ch;
+                color: var(--muted);
+                margin: 0 0 18px;
+            }
+            .bar {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px 16px;
+                align-items: center;
+                margin-bottom: 12px;
+            }
+            .counter {
+                font-weight: 600;
+            }
+            .counter span {
+                color: var(--red);
+            }
+            button,
+            .btn {
+                font: inherit;
+                font-weight: 600;
+                border: 2px solid var(--ink);
+                background: var(--panel);
+                color: var(--ink);
+                padding: 8px 14px;
+                border-radius: 6px;
+                cursor: pointer;
+            }
+            button[aria-pressed="true"] {
+                background: var(--ink);
+                color: var(--bg);
+            }
+            button.primary {
+                background: var(--red);
+                border-color: var(--red);
+                color: #fff;
+            }
+            button:disabled {
+                opacity: 0.6;
+                cursor: progress;
+            }
+            :focus-visible {
+                outline: 3px solid var(--red);
+                outline-offset: 2px;
+            }
+            .board-frame {
+                border: 2px solid var(--ink);
+                background: #fff;
+                line-height: 0;
+                position: relative;
+            }
+            canvas {
+                width: 100%;
+                height: auto;
+                aspect-ratio: 1 / 1;
+                display: block;
+                cursor: crosshair;
+            }
+            canvas.browse {
+                cursor: default;
+                touch-action: auto;
+            }
+            canvas.select {
+                touch-action: none;
+            }
+            .tip {
+                position: fixed;
+                pointer-events: none;
+                z-index: 5;
+                background: var(--ink);
+                color: var(--bg);
+                padding: 6px 10px;
+                border-radius: 6px;
+                font-size: 0.85rem;
+                line-height: 1.3;
+                max-width: 240px;
+                display: none;
+            }
+            .panel {
+                margin-top: 18px;
+                background: var(--panel);
+                border: 2px solid var(--ink);
+                border-radius: 8px;
+                padding: 18px;
+                display: none;
+                max-width: 560px;
+            }
+            .panel.open {
+                display: block;
+            }
+            .panel h2 {
+                margin: 0 0 4px;
+                font-size: 1.3rem;
+            }
+            .size {
+                color: var(--muted);
+                margin: 0 0 14px;
+            }
+            label {
+                display: block;
+                font-weight: 600;
+                margin: 12px 0 4px;
+            }
+            input[type="url"],
+            input[type="text"],
+            input[type="file"] {
+                width: 100%;
+                font: inherit;
+                padding: 9px 10px;
+                border: 2px solid var(--line);
+                border-radius: 6px;
+                background: var(--bg);
+                color: var(--ink);
+            }
+            .row {
+                display: flex;
+                gap: 10px;
+                margin-top: 16px;
+                flex-wrap: wrap;
+            }
+            .msg {
+                min-height: 1.5em;
+                margin-top: 12px;
+                font-weight: 600;
+            }
+            .msg.err {
+                color: var(--red);
+            }
+            .msg.ok {
+                color: var(--ok);
+            }
+            .notice {
+                margin-top: 18px;
+                padding: 12px 14px;
+                border: 2px dashed var(--red);
+                border-radius: 8px;
+                display: none;
+            }
+            footer {
+                margin-top: 28px;
+                color: var(--muted);
+                font-size: 0.9rem;
+                max-width: 62ch;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="wrap">
+            <h1>Papan Piksel</h1>
+            <p class="lead">
+                1.000.000 piksel dalam satu halaman. Pilih area, unggah gambar,
+                tambahkan tautan. Gratis.
+            </p>
+
+            <div class="bar">
+                <div class="counter">
+                    <span id="used">0</span> dari 1.000.000 piksel terpakai
+                </div>
+                <button id="modeBtn" type="button" aria-pressed="false">
+                    Pilih area
+                </button>
+            </div>
+
+            <div class="board-frame">
+                <canvas
+                    id="board"
+                    width="1000"
+                    height="1000"
+                    aria-label="Papan piksel. Klik gambar untuk membuka tautannya."
+                ></canvas>
+            </div>
+            <div class="tip" id="tip"></div>
+
+            <div class="notice" id="notice"></div>
+
+            <form class="panel" id="panel" autocomplete="off">
+                <h2>Pasang di area ini</h2>
+                <p class="size" id="sizeInfo"></p>
+
+                <label for="file">Gambar</label>
+                <input
+                    id="file"
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/gif"
+                    required
+                />
+
+                <label for="link">Tautan tujuan</label>
+                <input
+                    id="link"
+                    type="url"
+                    inputmode="url"
+                    placeholder="https://contoh.com"
+                    maxlength="300"
+                    required
+                />
+
+                <label for="title">Teks saat kursor diarahkan (opsional)</label>
+                <input
+                    id="title"
+                    type="text"
+                    maxlength="80"
+                    placeholder="Nama usaha atau proyekmu"
+                />
+
+                <div class="row">
+                    <button type="submit" class="primary" id="sendBtn">
+                        Pasang iklan
+                    </button>
+                    <button type="button" id="cancelBtn">Batal</button>
+                </div>
+                <div
+                    class="msg"
+                    id="msg"
+                    role="status"
+                    aria-live="polite"
+                ></div>
+            </form>
+
+            <footer>
+                Setiap iklan ditinjau dulu sebelum tampil. Konten dewasa, judi,
+                penipuan, dan malware ditolak. Pengelola tidak bertanggung jawab
+                atas isi situs tujuan.
+            </footer>
+        </div>
+
+        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+        <script>
+            /* ====== ISI DUA BARIS INI (dari Supabase: Project Settings > API) ====== */
+            const SUPABASE_URL = "https://xuwlilvinnexduouetxy.supabase.co";
+            const SUPABASE_KEY =
+                "sb_publishable_9-lTJTTjAuyHIopNM8b20Q_dbMrZbOu";
+            /* ======================================================================= */
+
+            const B = 10; // ukuran satu blok (piksel)
+            const N = 100; // jumlah blok per sisi (100 x 100 = 1000 x 1000 px)
+            const MAXB = 20; // maksimum blok per sisi satu iklan (200 px)
+
+            const $ = id => document.getElementById(id);
+            const canvas = $("board"),
+                ctx = canvas.getContext("2d");
+            const configured =
+                !SUPABASE_URL.includes("XXXX") &&
+                !SUPABASE_KEY.startsWith("ISI_");
+            const db = configured
+                ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+                : null;
+
+            let ads = [];
+            const imgs = new Map();
+            let sel = null; // {ax, ay, bx, by}
+            let selecting = false;
+            let clickAd = null;
+            let selectMode = window.matchMedia("(pointer: fine)").matches;
+
+            function setMode(on) {
+                selectMode = on;
+                $("modeBtn").setAttribute("aria-pressed", String(on));
+                $("modeBtn").textContent = on
+                    ? "Mode pilih area: aktif"
+                    : "Pilih area";
+                canvas.className = on ? "select" : "browse";
+            }
+            setMode(selectMode);
+            $("modeBtn").addEventListener("click", () => setMode(!selectMode));
+
+            /* ---------- geometri ---------- */
+            function cellAt(e) {
+                const r = canvas.getBoundingClientRect();
+                const s = 1000 / r.width;
+                const clamp = v => Math.max(0, Math.min(N - 1, v));
+                return {
+                    x: clamp(Math.floor(((e.clientX - r.left) * s) / B)),
+                    y: clamp(Math.floor(((e.clientY - r.top) * s) / B))
+                };
+            }
+            const adAt = c =>
+                ads.find(
+                    a =>
+                        c.x >= a.x &&
+                        c.x < a.x + a.w &&
+                        c.y >= a.y &&
+                        c.y < a.y + a.h
+                );
+            function rect() {
+                if (!sel) return null;
+                const x = Math.min(sel.ax, sel.bx),
+                    y = Math.min(sel.ay, sel.by);
+                return {
+                    x,
+                    y,
+                    w: Math.abs(sel.bx - sel.ax) + 1,
+                    h: Math.abs(sel.by - sel.ay) + 1
+                };
+            }
+            const conflict = r =>
+                ads.some(
+                    a =>
+                        a.x < r.x + r.w &&
+                        a.x + a.w > r.x &&
+                        a.y < r.y + r.h &&
+                        a.y + a.h > r.y
+                );
+
+            /* ---------- gambar ---------- */
+            function draw() {
+                ctx.fillStyle = "#ffffff";
+                ctx.fillRect(0, 0, 1000, 1000);
+                ctx.strokeStyle = "#e3e9ee";
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                for (let i = 0; i <= N; i++) {
+                    const p = i * B + 0.5;
+                    ctx.moveTo(p, 0);
+                    ctx.lineTo(p, 1000);
+                    ctx.moveTo(0, p);
+                    ctx.lineTo(1000, p);
+                }
+                ctx.stroke();
+
+                for (const a of ads) {
+                    const im = imgs.get(a.id);
+                    if (im && im.complete && im.naturalWidth) {
+                        ctx.drawImage(im, a.x * B, a.y * B, a.w * B, a.h * B);
+                    } else {
+                        ctx.fillStyle = "#cfd8e0";
+                        ctx.fillRect(a.x * B, a.y * B, a.w * B, a.h * B);
+                    }
+                }
+
+                const r = rect();
+                if (r) {
+                    const bad = conflict(r);
+                    ctx.fillStyle = bad
+                        ? "rgba(228,0,43,.28)"
+                        : "rgba(20,33,61,.2)";
+                    ctx.fillRect(r.x * B, r.y * B, r.w * B, r.h * B);
+                    ctx.strokeStyle = bad ? "#e4002b" : "#14213d";
+                    ctx.lineWidth = 3;
+                    ctx.strokeRect(
+                        r.x * B + 1.5,
+                        r.y * B + 1.5,
+                        r.w * B - 3,
+                        r.h * B - 3
+                    );
+                }
+            }
+
+            function updateCounter() {
+                const used = ads.reduce((n, a) => n + a.w * a.h * B * B, 0);
+                $("used").textContent = used.toLocaleString("id-ID");
+            }
+
+            /* ---------- data ---------- */
+            async function loadAds() {
+                if (!db) {
+                    $("notice").style.display = "block";
+                    $("notice").textContent =
+                        "Belum terhubung ke database. Isi SUPABASE_URL dan SUPABASE_KEY di index.html.";
+                    draw();
+                    return;
+                }
+                const all = [];
+                for (let from = 0; ; from += 1000) {
+                    const { data, error } = await db
+                        .from("ads")
+                        .select("id,x,y,w,h,link,title,image")
+                        .eq("approved", true)
+                        .order("id")
+                        .range(from, from + 999);
+                    if (error) {
+                        $("notice").style.display = "block";
+                        $("notice").textContent =
+                            "Gagal memuat papan: " + error.message;
+                        break;
+                    }
+                    all.push(...data);
+                    if (data.length < 1000) break;
+                }
+                ads = all;
+                for (const a of ads) {
+                    if (!imgs.has(a.id)) {
+                        const im = new Image();
+                        im.onload = draw;
+                        im.src = a.image;
+                        imgs.set(a.id, im);
+                    }
+                }
+                updateCounter();
+                draw();
+            }
+
+            /* ---------- interaksi ---------- */
+            const tip = $("tip");
+            function hostOf(u) {
+                try {
+                    return new URL(u).hostname;
+                } catch {
+                    return u;
+                }
+            }
+
+            canvas.addEventListener("pointerdown", e => {
+                const c = cellAt(e);
+                const a = adAt(c);
+                if (a) {
+                    clickAd = a;
+                    return;
+                }
+                if (!selectMode) return;
+                canvas.setPointerCapture(e.pointerId);
+                selecting = true;
+                sel = { ax: c.x, ay: c.y, bx: c.x, by: c.y };
+                draw();
+            });
+
+            canvas.addEventListener("pointermove", e => {
+                const c = cellAt(e);
+                if (selecting && sel) {
+                    const cl = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+                    sel.bx = cl(
+                        cl(c.x, sel.ax - MAXB + 1, sel.ax + MAXB - 1),
+                        0,
+                        N - 1
+                    );
+                    sel.by = cl(
+                        cl(c.y, sel.ay - MAXB + 1, sel.ay + MAXB - 1),
+                        0,
+                        N - 1
+                    );
+                    draw();
+                    return;
+                }
+                const a = adAt(c);
+                canvas.style.cursor = a
+                    ? "pointer"
+                    : selectMode
+                      ? "crosshair"
+                      : "default";
+                if (a && e.pointerType === "mouse") {
+                    tip.textContent =
+                        (a.title ? a.title + " - " : "") + hostOf(a.link);
+                    tip.style.display = "block";
+                    tip.style.left =
+                        Math.min(e.clientX + 14, window.innerWidth - 250) +
+                        "px";
+                    tip.style.top = e.clientY + 16 + "px";
+                } else {
+                    tip.style.display = "none";
+                }
+            });
+            canvas.addEventListener("pointerleave", () => {
+                tip.style.display = "none";
+            });
+
+            canvas.addEventListener("pointerup", e => {
+                const c = cellAt(e);
+                if (clickAd) {
+                    if (adAt(c) === clickAd)
+                        window.open(
+                            clickAd.link,
+                            "_blank",
+                            "noopener,noreferrer"
+                        );
+                    clickAd = null;
+                    return;
+                }
+                if (!selecting) return;
+                selecting = false;
+                const r = rect();
+                if (conflict(r)) {
+                    showMsg(
+                        "Area ini bertabrakan dengan iklan lain. Pilih area kosong.",
+                        "err"
+                    );
+                    $("panel").classList.add("open");
+                    $("sendBtn").disabled = true;
+                    $("sizeInfo").textContent = "Area bertabrakan.";
+                    return;
+                }
+                openPanel(r);
+            });
+            canvas.addEventListener("pointercancel", () => {
+                selecting = false;
+                clickAd = null;
+            });
+
+            function openPanel(r) {
+                $("panel").classList.add("open");
+                $("sendBtn").disabled = false;
+                $("sizeInfo").textContent =
+                    r.w +
+                    " x " +
+                    r.h +
+                    " blok = " +
+                    r.w * B +
+                    " x " +
+                    r.h * B +
+                    " piksel (" +
+                    (r.w * r.h * B * B).toLocaleString("id-ID") +
+                    " piksel)";
+                showMsg("", "");
+                $("panel").scrollIntoView({
+                    behavior: "smooth",
+                    block: "nearest"
+                });
+            }
+            function closePanel() {
+                sel = null;
+                selecting = false;
+                $("panel").classList.remove("open");
+                $("panel").reset();
+                draw();
+            }
+            $("cancelBtn").addEventListener("click", closePanel);
+
+            function showMsg(text, kind) {
+                const m = $("msg");
+                m.textContent = text;
+                m.className = "msg" + (kind ? " " + kind : "");
+            }
+
+            /* ---------- kirim ---------- */
+            async function makeImage(file, w, h) {
+                const bmp = await createImageBitmap(file);
+                const c = document.createElement("canvas");
+                c.width = w;
+                c.height = h;
+                const x = c.getContext("2d");
+                x.fillStyle = "#ffffff";
+                x.fillRect(0, 0, w, h);
+                const s = Math.max(w / bmp.width, h / bmp.height);
+                const dw = bmp.width * s,
+                    dh = bmp.height * s;
+                x.drawImage(bmp, (w - dw) / 2, (h - dh) / 2, dw, dh);
+                for (let q = 0.9; q >= 0.4; q -= 0.1) {
+                    const u = c.toDataURL("image/jpeg", q);
+                    if (u.length <= 58000) return u;
+                }
+                throw new Error(
+                    "Gambar terlalu rumit untuk area sekecil ini. Coba gambar lain."
+                );
+            }
+
+            $("panel").addEventListener("submit", async e => {
+                e.preventDefault();
+                if (!db) {
+                    showMsg("Database belum dikonfigurasi.", "err");
+                    return;
+                }
+                const r = rect();
+                if (!r || conflict(r)) {
+                    showMsg("Pilih area kosong terlebih dahulu.", "err");
+                    return;
+                }
+
+                let link = $("link").value.trim();
+                if (!/^https?:\/\//i.test(link)) link = "https://" + link;
+                const file = $("file").files[0];
+                if (!file) {
+                    showMsg("Pilih gambar dulu.", "err");
+                    return;
+                }
+
+                $("sendBtn").disabled = true;
+                showMsg("Mengirim...", "");
+                try {
+                    const image = await makeImage(file, r.w * B, r.h * B);
+                    const { error } = await db.rpc("claim_area", {
+                        p_x: r.x,
+                        p_y: r.y,
+                        p_w: r.w,
+                        p_h: r.h,
+                        p_link: link,
+                        p_title: $("title").value.trim() || null,
+                        p_image: image
+                    });
+                    if (error) {
+                        if (String(error.message).includes("AREA_TAKEN")) {
+                            throw new Error(
+                                "Area ini sudah dipakai atau sedang menunggu persetujuan. Pilih area lain."
+                            );
+                        }
+                        throw new Error("Gagal mengirim: " + error.message);
+                    }
+                    closePanel();
+                    $("notice").style.display = "block";
+                    $("notice").textContent =
+                        "Terkirim. Iklanmu akan tampil setelah ditinjau.";
+                    await loadAds();
+                } catch (err) {
+                    showMsg(err.message, "err");
+                    $("sendBtn").disabled = false;
+                }
+            });
+
+            draw();
+            loadAds();
+        </script>
+    </body>
+</html>
